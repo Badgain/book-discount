@@ -2,30 +2,47 @@ package service
 
 import (
 	"context"
+	"fmt"
 
+	"github.com/Badgain/book-discount/internal/config"
 	"github.com/Badgain/book-discount/internal/domain"
 )
 
-/*
-Бизнес правила:
-
-1. Клиент еще не соверщаш покупку и берет от двух до пяти книг - скидка 20% на весь счет
-2. Клиент уже совершал покупки в магазине, берет от 2 до 5 книг - скидка 10%
-3. Клиент уже совершал покупки в магазине, берет от 6 до 10 книг - скидка 5%
-4. Клиент уже совершал покупки в магазине, берет свяше 10 книг - скидка 2%
-5. Если сегодня пятница - всем скидка 5% не зависимо от объема корзины или типа клиента
-
-*/
-
-// DiscountService реализует бизнес-логику расчета скидок с использованием правил
-type DiscountService struct{}
-
-// NewDiscountService создает новый экземпляр DiscountService с правилами по умолчанию
-func NewDiscountService() *DiscountService {
-	return &DiscountService{}
+type DiscountService struct {
+	engine *RuleEngine
 }
 
-// Calculate вычисляет скидку на основе правил
-func (s *DiscountService) Calculate(ctx context.Context, customer domain.CustomerType, books []domain.Book) (domain.Discount, error) {
-	return domain.Discount{}, nil
+func NewDiscountService(timeProvider domain.TimeProvider) (*DiscountService, error) {
+	return NewDiscountServiceWithConfig(timeProvider, "")
+}
+
+func NewDiscountServiceWithConfig(timeProvider domain.TimeProvider, configPath string) (*DiscountService, error) {
+	if timeProvider == nil {
+		timeProvider = &domain.RealTimeProvider{}
+	}
+
+	var cfg *config.DiscountConfig
+	var err error
+
+	if configPath != "" {
+		cfg, err = config.Load(configPath)
+		if err != nil {
+			return nil, fmt.Errorf("failed to load config: %w", err)
+		}
+	} else {
+		cfg = config.Default()
+	}
+
+	engine, err := NewRuleEngine(cfg, timeProvider)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create rule engine: %w", err)
+	}
+
+	return &DiscountService{
+		engine: engine,
+	}, nil
+}
+
+func (s *DiscountService) Calculate(ctx context.Context, customerType domain.CustomerType, books []domain.Book) (domain.Discount, error) {
+	return s.engine.Calculate(ctx, customerType, books)
 }

@@ -1,0 +1,38 @@
+rules:
+  - name: BulkSameBookRule
+    enabled: true
+    priority: 1
+    params:
+      minBooks: 5
+      discountRate: 40
+
+  - name: FridayRule
+    enabled: true
+    priority: 10
+    params:
+      discountRate: 5
+
+  - name: VolumeDiscountRule
+    enabled: true
+    priority: 20
+    params:
+      ranges:
+        - customerType: new
+          minBooks: 2
+          maxBooks: 5
+          discountRate: 20
+
+        - customerType: old
+          minBooks: 2
+          maxBooks: 5
+          discountRate: 10
+
+        - customerType: old
+          minBooks: 6
+          maxBooks: 10
+          discountRate: 5
+
+        - customerType: old
+          minBooks: 11
+          maxBooks: null
+          discountRate: 2

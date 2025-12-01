@@ -7,21 +7,23 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/Badgain/book-discount/internal/domain"
 	"github.com/Badgain/book-discount/internal/handler"
 	"github.com/Badgain/book-discount/internal/service"
 )
 
 func main() {
-	// Получаем порт из переменной окружения или используем 8080 по умолчанию
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"
 	}
 
-	// Инициализация сервиса
-	discountService := service.NewDiscountService()
+	timeProvider := &domain.RealTimeProvider{}
+	discountService, err := service.NewDiscountService(timeProvider)
+	if err != nil {
+		log.Fatalf("Failed to create discount service: %v", err)
+	}
 
-	// Инициализация handler
 	discountHandler := handler.NewDiscountHandler(discountService)
 
 	// Настройка маршрутов
