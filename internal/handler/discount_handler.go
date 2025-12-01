@@ -36,14 +36,13 @@ func (h *DiscountHandler) CalculateDiscount(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	// Расчет скидки
-	response, err := h.service.Calculate(ctx, req.CustomerTypeAsDomain(), req.BooksAsDomain())
+	discount, err := h.service.Calculate(ctx, req.CustomerTypeAsDomain(), req.BooksAsDomain())
 	if err != nil {
 		h.sendError(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	// Отправка ответа
+	response := dto.NewDiscountResponse(discount)
 	h.sendJSON(w, response, http.StatusOK)
 }
 
