@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/Badgain/book-discount/internal/domain"
@@ -15,9 +16,17 @@ import (
 3. Клиент уже совершал покупки в магазине, берет от 6 до 10 книг - скидка 5%
 4. Клиент уже совершал покупки в магазине, берет свяше 10 книг - скидка 2%
 5. Если сегодня пятница - всем скидка 5% не зависимо от объема корзины или типа клиента
-todo: здесь имеется в виду, что доп. скидка 5% или общая скидка будет 5%?
+
+// Вопросы:
+// 1. Кстати, интересный момент: если покупатель первый раз покупает больше 5 разных книг, то скидки ему не будет?
+// 5. Здесь имеется в виду, что доп скидка 5% или общая скидка будет 5%? Я возьмусь трактовать это, как сумму скидок.
 
 */
+
+var (
+	ErrEmptyCart        = errors.New("shopping cart is empty")
+	ErrInvalidBookPrice = errors.New("book price must be positive")
+)
 
 type DiscountService struct {
 	now func() time.Time
@@ -30,28 +39,22 @@ func NewDiscountService() *DiscountService {
 	}
 }
 
+type bookAggregate struct {
+	count int
+	price float64
+	total float64
+}
+
 // Calculate вычисляет скидку на основе правил
 func (s *DiscountService) Calculate(ctx context.Context, customer domain.CustomerType, books []domain.Book) (domain.Discount, error) {
-	if s.now == nil {
-		s.now = time.Now
+	if err := s.validateBooks(books); err != nil {
+		return domain.Discount{}, err
 	}
 
-	var (
-		originalAmount float64
-		regularAmount  float64
-		regularCount   int
-		bulkDiscount   float64
-	)
+	var originalAmount float64
 
 	// Группируем книги по ID для определения оптовых скидок
-	type bookAggregate struct {
-		count int
-		price float64
-		total float64
-	}
-
 	booksByID := make(map[string]*bookAggregate)
-
 	for _, b := range books {
 		originalAmount += b.Price
 		if agg, ok := booksByID[b.ID]; ok {
@@ -62,11 +65,16 @@ func (s *DiscountService) Calculate(ctx context.Context, customer domain.Custome
 		}
 	}
 
-	// Разделяем книги на оптовые (со спец-скидкой 40%) и обычные
+	var (
+		regularCount  int
+		regularAmount float64
+		bulkDiscount  float64
+	)
+
+	// Разделяем книги на оптовые и обычные
 	for _, agg := range booksByID {
 		if agg.count >= minBooksForBulkDiscount {
-			// Каждая вторая книга получает скидку 40%
-			discountedCopies := agg.count / 2
+			discountedCopies := agg.count / 2 // Каждая вторая книга получает скидку 40%
 			bulkDiscount += float64(discountedCopies) * agg.price * discountPercentBulkBook
 		} else {
 			regularAmount += agg.total
@@ -74,15 +82,11 @@ func (s *DiscountService) Calculate(ctx context.Context, customer domain.Custome
 		}
 	}
 
-	// Определяем процент скидки для обычных книг
 	percent := s.discountPercent(customer, regularCount)
-
-	// Применяем пятничную скидку 5%, если она выше текущей
-	if s.isFriday() && percent < discountPercentFriday {
-		percent = discountPercentFriday
+	if s.isFriday() {
+		percent += discountPercentFriday
 	}
 
-	// Рассчитываем итоговые суммы
 	regularDiscount := regularAmount * percent
 	discountAmount := regularDiscount + bulkDiscount
 	finalAmount := originalAmount - discountAmount
@@ -121,4 +125,18 @@ func (s *DiscountService) discountPercent(customer domain.CustomerType, booksCou
 
 func (s *DiscountService) isFriday() bool {
 	return s.now().Weekday() == time.Friday
+}
+
+func (s *DiscountService) validateBooks(books []domain.Book) error {
+	if len(books) == 0 {
+		return ErrEmptyCart
+	}
+
+	for _, book := range books {
+		if book.Price <= 0 {
+			return ErrInvalidBookPrice
+		}
+	}
+
+	return nil
 }

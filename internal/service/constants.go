@@ -1,5 +1,6 @@
 package service
 
+// Discount percentages
 const (
 	// discountPercentNewCustomer2to5 - скидка 20% для нового клиента при покупке 2-5 книг
 	discountPercentNewCustomer2to5 = 0.20
@@ -20,6 +21,7 @@ const (
 	discountPercentBulkBook = 0.40
 )
 
+// Book quantity thresholds
 const (
 	// minBooksForNewCustomerDiscount - минимальное количество книг для скидки новому клиенту
 	minBooksForNewCustomerDiscount = 2
