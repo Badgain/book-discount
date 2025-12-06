@@ -44,7 +44,7 @@ func (h *DiscountHandler) CalculateDiscount(w http.ResponseWriter, r *http.Reque
 	}
 
 	// Отправка ответа
-	h.sendJSON(w, response, http.StatusOK)
+	h.sendJSON(w, discountAsDTO(response), http.StatusOK)
 }
 
 // sendJSON отправляет JSON ответ
@@ -59,4 +59,13 @@ func (h *DiscountHandler) sendJSON(w http.ResponseWriter, data interface{}, stat
 // sendError отправляет ошибку в формате JSON
 func (h *DiscountHandler) sendError(w http.ResponseWriter, message string, statusCode int) {
 	h.sendJSON(w, dto.ErrorResponse{Error: message}, statusCode)
+}
+
+func discountAsDTO(discount domain.Discount) dto.DiscountResponse {
+	return dto.DiscountResponse{
+		OriginalAmount:  discount.CartAmount,
+		DiscountPercent: discount.DiscountPercent,
+		DiscountAmount:  discount.DiscountAmount,
+		FinalAmount:     discount.TotalCost,
+	}
 }

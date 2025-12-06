@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"errors"
+	"math"
 	"time"
 
 	"github.com/Badgain/book-discount/internal/domain"
@@ -17,9 +18,9 @@ import (
 4. Клиент уже совершал покупки в магазине, берет свяше 10 книг - скидка 2%
 5. Если сегодня пятница - всем скидка 5% не зависимо от объема корзины или типа клиента
 
-// Вопросы:
-// 1. Кстати, интересный момент: если покупатель первый раз покупает больше 5 разных книг, то скидки ему не будет?
-// 5. Здесь имеется в виду, что доп скидка 5% или общая скидка будет 5%? Я возьмусь трактовать это, как сумму скидок.
+Вопросы:
+1. Кстати, интересный момент: если покупатель первый раз покупает больше 5 разных книг, то скидки ему не будет?
+5. Здесь имеется в виду, что доп скидка 5% или общая скидка будет 5%? Я возьмусь трактовать это, как сумму скидок.
 
 */
 
@@ -97,11 +98,15 @@ func (s *DiscountService) Calculate(ctx context.Context, customer domain.Custome
 	}
 
 	return domain.Discount{
-		CartAmount:      originalAmount,
-		DiscountPercent: totalPercent,
-		DiscountAmount:  discountAmount,
-		TotalCost:       finalAmount,
+		CartAmount:      roundToTwoDecimals(originalAmount),
+		DiscountPercent: roundToTwoDecimals(totalPercent),
+		DiscountAmount:  roundToTwoDecimals(discountAmount),
+		TotalCost:       roundToTwoDecimals(finalAmount),
 	}, nil
+}
+
+func roundToTwoDecimals(value float64) float64 {
+	return math.Round(value*100) / 100
 }
 
 func (s *DiscountService) discountPercent(customer domain.CustomerType, booksCount int) float64 {

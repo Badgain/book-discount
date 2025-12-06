@@ -12,8 +12,6 @@ import (
 
 func mockTime(weekday time.Weekday) func() time.Time {
 	return func() time.Time {
-		// Используем фиксированную дату с нужным днем недели
-		// 2024-01-01 это понедельник, добавляем нужное количество дней
 		baseDate := time.Date(2024, 1, 1, 12, 0, 0, 0, time.UTC)
 		daysToAdd := int(weekday - time.Monday)
 		if daysToAdd < 0 {
@@ -75,7 +73,7 @@ func TestDiscountService_Calculate_Validation(t *testing.T) {
 
 func TestDiscountService_Calculate_NewCustomer(t *testing.T) {
 	svc := NewDiscountService()
-	svc.now = mockTime(time.Monday) // не пятница
+	svc.now = mockTime(time.Monday)
 	ctx := context.Background()
 
 	tests := []struct {
@@ -158,7 +156,7 @@ func TestDiscountService_Calculate_NewCustomer(t *testing.T) {
 
 func TestDiscountService_Calculate_OldCustomer(t *testing.T) {
 	svc := NewDiscountService()
-	svc.now = mockTime(time.Monday) // не пятница
+	svc.now = mockTime(time.Monday)
 	ctx := context.Background()
 
 	tests := []struct {
@@ -368,7 +366,7 @@ func TestDiscountService_Calculate_FridayDiscount(t *testing.T) {
 
 func TestDiscountService_Calculate_BulkDiscount(t *testing.T) {
 	svc := NewDiscountService()
-	svc.now = mockTime(time.Monday) // не пятница
+	svc.now = mockTime(time.Monday)
 	ctx := context.Background()
 
 	tests := []struct {
@@ -406,7 +404,7 @@ func TestDiscountService_Calculate_BulkDiscount(t *testing.T) {
 				{ID: "1", Price: 10},
 				{ID: "1", Price: 10},
 			},
-			wantPercent:  0.1714, // 3 книги * 10 * 0.4 = 12, всего 70, процент = 12/70 ≈ 0.1714
+			wantPercent:  0.17,
 			wantDiscount: 12,
 			wantFinal:    58,
 		},
@@ -420,7 +418,7 @@ func TestDiscountService_Calculate_BulkDiscount(t *testing.T) {
 				}
 				return books
 			}(),
-			wantPercent:  0.20, // 5 книг * 10 * 0.4 = 20, всего 100, процент = 20/100 = 0.2
+			wantPercent:  0.20,
 			wantDiscount: 20,
 			wantFinal:    80,
 		},
@@ -439,8 +437,8 @@ func TestDiscountService_Calculate_BulkDiscount(t *testing.T) {
 				{ID: "regular1", Price: 10},
 				{ID: "regular2", Price: 10},
 			},
-			wantPercent:  0.175, // bulk: 3*10*0.4=12, regular: 20*0.1=2, total discount=14, total=80, percent=14/80=0.175
-			wantDiscount: 14,    // 12 (bulk) + 2 (regular)
+			wantPercent:  0.18,
+			wantDiscount: 14,
 			wantFinal:    66,
 		},
 	}
@@ -486,8 +484,8 @@ func TestDiscountService_Calculate_CombinedDiscounts(t *testing.T) {
 				{ID: "regular2", Price: 10},
 				{ID: "regular3", Price: 10},
 			},
-			wantPercent:  0.1833, // bulk: 3*10*0.4=12, regular: 30*0.15=4.5, total discount=16.5, total=90, percent=16.5/90≈0.1833
-			wantDiscount: 16.5,   // 12 (bulk) + 4.5 (regular with friday)
+			wantPercent:  0.18,
+			wantDiscount: 16.5,
 			wantFinal:    73.5,
 		},
 		{
@@ -505,8 +503,8 @@ func TestDiscountService_Calculate_CombinedDiscounts(t *testing.T) {
 				{ID: "regular1", Price: 10},
 				{ID: "regular2", Price: 10},
 			},
-			wantPercent:  0.2125, // bulk: 3*10*0.4=12, regular: 20*0.25=5, total discount=17, total=80, percent=17/80=0.2125
-			wantDiscount: 17,     // 12 (bulk) + 5 (regular with friday)
+			wantPercent:  0.21,
+			wantDiscount: 17,
 			wantFinal:    63,
 		},
 	}
@@ -525,7 +523,7 @@ func TestDiscountService_Calculate_CombinedDiscounts(t *testing.T) {
 
 func TestDiscountService_Calculate_EdgeCases(t *testing.T) {
 	svc := NewDiscountService()
-	svc.now = mockTime(time.Monday) // не пятница
+	svc.now = mockTime(time.Monday)
 	ctx := context.Background()
 
 	tests := []struct {
@@ -555,7 +553,7 @@ func TestDiscountService_Calculate_EdgeCases(t *testing.T) {
 				{ID: "B", Price: 20},
 				{ID: "B", Price: 20},
 			},
-			wantPercent:  0.20, // A: 3*10*0.4=12, B: 3*20*0.4=24, total discount=36, total=180, percent=36/180=0.2
+			wantPercent:  0.20,
 			wantDiscount: 36,
 			wantFinal:    144,
 		},
